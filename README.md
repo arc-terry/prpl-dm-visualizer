@@ -19,12 +19,24 @@ Scripts live under `dm_visualizers/`:
 ## Usage
 
 ```bash
+python3 visualize.py
+python3 visualize.py show_firewall_rules demo_dm_data/pon-wan-DM.txt
+
 python3 dm_visualizers/show_logical_stack.py [DM.txt]
 python3 dm_visualizers/show_firewall_rules.py [DM.txt]
 python3 dm_visualizers/show_wan_manager.py [DM.txt]
 ```
 
-If no file is provided, `DM.txt` in the current directory is used.
+`visualize.py` prompts you to choose a visualizer when you omit the script name.
+You can enter a number or a unique name prefix (auto-completed when unambiguous).
+If no file is provided, it prompts for a DM file (defaulting to `DM.txt` when present).
+The DM file prompt supports tab completion on systems with Python readline, including subdirectories like `demo_dm_data/`.
+
+## Adding a New Visualizer
+
+1. Add a new script under `dm_visualizers/` (for example: `dm_visualizers/show_qos.py`).
+2. Keep a `Usage:` line in the module docstring for consistency.
+3. Run `python3 visualize.py` — the controller auto-detects new scripts.
 
 ## Demo Data
 
