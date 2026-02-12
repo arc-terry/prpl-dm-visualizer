@@ -174,13 +174,18 @@ COLUMNS=60 python3 dm_visualizers/show_{object}.py DM.txt | head -30
 COLUMNS=120 python3 dm_visualizers/show_{object}.py DM.txt | head -30
 ```
 
-### 5. Generate Documentation (optional)
+### 5. Generate Documentation (required)
 
-If the object model is complex, create `doc/tr181-{object}.md` with:
-- References to prpl Foundation and BBF sources
-- Object hierarchy explanation
-- How to read the script output
-- Key relationships and selection mechanisms
+Always create an explanation document under `doc/` named `tr181-{object}.md`.
+Use `doc/tr181-fw.md` as the layout template and extract the same kinds of concepts:
+
+- References to prpl Foundation, BBF, and any relevant XML/README sources
+- Overview and key top-level parameters
+- Object hierarchy diagram (parent/child relationships)
+- Key selection or resolution mechanism(s) (e.g., Level → Policy → Chain)
+- Naming conventions and any commonly used patterns
+- Rule/entry parameters and meaning
+- How to read the script output (overview box, per-instance tables, summary table)
 
 ## Existing Scripts in This Repository
 
