@@ -3,7 +3,7 @@
 Parse DM.txt and list the hierarchical relationship (top to bottom)
 of each Device.Logical.Interface following BBF TR-181 InterfaceStack model.
 
-Usage: python3 show_logical_stack.py [DM.txt]
+Usage: python3 dm_visualizers/show_logical_stack.py [DM.txt]
 """
 
 import re

@@ -8,18 +8,20 @@ A collection of Python CLI tools that parse TR-181 style `Device.*=value` dumps 
 
 ## Scripts
 
+Scripts live under `dm_visualizers/`:
+
 | Script | Object | Description |
 |---|---|---|
-| `show_logical_stack.py` | `Device.Logical` | Interface stack tree via recursive `LowerLayers` walk, WAN/LAN role detection |
-| `show_firewall_rules.py` | `Device.Firewall` | Chain/rule tables, Level→Policy→Chain resolution, target/protocol display |
-| `show_wan_manager.py` | `Device.X_PRPLWARE-COM_WANManager` | WAN modes, per-mode interfaces, IPv4/IPv6 mode, alias-resolved references |
+| `dm_visualizers/show_logical_stack.py` | `Device.Logical` | Interface stack tree via recursive `LowerLayers` walk, WAN/LAN role detection |
+| `dm_visualizers/show_firewall_rules.py` | `Device.Firewall` | Chain/rule tables, Level→Policy→Chain resolution, target/protocol display |
+| `dm_visualizers/show_wan_manager.py` | `Device.X_PRPLWARE-COM_WANManager` | WAN modes, per-mode interfaces, IPv4/IPv6 mode, alias-resolved references |
 
 ## Usage
 
 ```bash
-python3 show_logical_stack.py [DM.txt]
-python3 show_firewall_rules.py [DM.txt]
-python3 show_wan_manager.py [DM.txt]
+python3 dm_visualizers/show_logical_stack.py [DM.txt]
+python3 dm_visualizers/show_firewall_rules.py [DM.txt]
+python3 dm_visualizers/show_wan_manager.py [DM.txt]
 ```
 
 If no file is provided, `DM.txt` in the current directory is used.
@@ -34,7 +36,7 @@ Sample dump files are provided under `demo_dm_data/`:
 | `pon-wan-DM.txt` | Device dump with PON WAN connection |
 
 ```bash
-python3 show_firewall_rules.py demo_dm_data/pon-wan-DM.txt
+python3 dm_visualizers/show_firewall_rules.py demo_dm_data/pon-wan-DM.txt
 ```
 
 ## Input Format

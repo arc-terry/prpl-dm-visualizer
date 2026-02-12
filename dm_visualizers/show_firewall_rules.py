@@ -3,7 +3,7 @@
 Parse DM.txt and display TR-181 Device.Firewall chains and rules
 as a text-based visualized diagram.
 
-Usage: python3 show_firewall_rules.py [DM.txt]
+Usage: python3 dm_visualizers/show_firewall_rules.py [DM.txt]
 
 References:
   - Broadband Forum TR-181 Device:2 Data Model (Device.Firewall.Chain.{i}.Rule.{i})

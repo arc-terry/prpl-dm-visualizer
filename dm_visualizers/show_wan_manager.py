@@ -3,7 +3,7 @@
 Parse DM.txt and display TR-181 X_PRPLWARE-COM_WANManager WAN modes
 and their interfaces as a text-based diagram.
 
-Usage: python3 show_wan_manager.py [DM.txt]
+Usage: python3 dm_visualizers/show_wan_manager.py [DM.txt]
 
 References:
   - Broadband Forum TR-181 Device:2 Data Model

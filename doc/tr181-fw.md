@@ -110,7 +110,7 @@ Each `Chain.{i}.Rule.{i}` contains:
 
 The `_Out` chains (`High_Out`, `IPV6_High_Out`, `Custom_Out`) are not selected via the Level/Policy mechanism. They control outbound FORWARD traffic and are typically always active or wired separately by the tr181-firewall plugin. These implement a whitelist of allowed outbound services (FTP, SSH, DNS, HTTP, HTTPS, etc.), with catch-all reject rules at the end.
 
-## Reading show_firewall_rules.py Output
+## Reading dm_visualizers/show_firewall_rules.py Output
 
 The script parses `DM.txt` and displays:
 

@@ -74,7 +74,7 @@ Search for background knowledge about the target object:
 
 ### 3. Generate the Python Script
 
-Create a script named `show_{object}.py` following these patterns:
+Create a script named `dm_visualizers/show_{object}.py` following these patterns:
 
 #### File Structure (mandatory)
 
@@ -83,7 +83,7 @@ Create a script named `show_{object}.py` following these patterns:
 """
 Parse DM.txt and display TR-181 Device.{Object} as a text-based diagram.
 
-Usage: python3 show_{object}.py [DM.txt]
+Usage: python3 dm_visualizers/show_{object}.py [DM.txt]
 
 References:
   - Broadband Forum TR-181 Device:2 Data Model
@@ -164,14 +164,14 @@ def get_attr(dm, prefix, attr):
 ### 4. Test the Script
 
 ```bash
-python3 show_{object}.py DM.txt
+python3 dm_visualizers/show_{object}.py DM.txt
 ```
 
 Verify output renders correctly at different widths:
 
 ```bash
-COLUMNS=60 python3 show_{object}.py DM.txt | head -30
-COLUMNS=120 python3 show_{object}.py DM.txt | head -30
+COLUMNS=60 python3 dm_visualizers/show_{object}.py DM.txt | head -30
+COLUMNS=120 python3 dm_visualizers/show_{object}.py DM.txt | head -30
 ```
 
 ### 5. Generate Documentation (optional)
@@ -186,8 +186,8 @@ If the object model is complex, create `doc/tr181-{object}.md` with:
 
 | Script | Object | Key Features |
 |---|---|---|
-| `show_logical_stack.py` | `Device.Logical` | Recursive LowerLayers tree walk, WAN/LAN role detection |
-| `show_firewall_rules.py` | `Device.Firewall` | Chain/Rule tables, Level→Policy→Chain resolution |
+| `dm_visualizers/show_logical_stack.py` | `Device.Logical` | Recursive LowerLayers tree walk, WAN/LAN role detection |
+| `dm_visualizers/show_firewall_rules.py` | `Device.Firewall` | Chain/Rule tables, Level→Policy→Chain resolution |
 
 Study these scripts before generating a new one to maintain consistency.
 
