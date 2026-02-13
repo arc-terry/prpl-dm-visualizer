@@ -12,38 +12,18 @@ References:
 """
 
 import re
-import shutil
 import sys
+
+from utils import (
+    get_attr, parse_dm, warn_narrow_width,
+    display_width, pad_display, fit_display,
+    hline, boxline, box_width,
+)
 
 WM_PREFIX = 'Device.X_PRPLWARE-COM_WANManager'
 
 
-def get_term_width():
-    """Return terminal width, defaulting to 80."""
-    try:
-        return shutil.get_terminal_size((80, 24)).columns
-    except Exception:
-        return 80
 
-
-def parse_dm(filepath):
-    """Parse DM.txt into a dict of {path: value}."""
-    dm = {}
-    with open(filepath) as f:
-        for line in f:
-            line = line.strip()
-            m = re.match(r'^(Device\..+?)=(.*)$', line)
-            if m:
-                dm[m.group(1)] = m.group(2).strip('"')
-    return dm
-
-
-def get_attr(dm, prefix, attr):
-    """Get attribute, trying with/without double dot."""
-    for key in [f"{prefix}.{attr}", f"{prefix}..{attr}"]:
-        if key in dm:
-            return dm[key]
-    return None
 
 
 def resolve_alias(dm, ref):
@@ -66,13 +46,9 @@ def ref_label(dm, ref):
     return short
 
 
-def hline(char, width, left='', right=''):
-    inner = width - len(left) - len(right)
-    return f'{left}{char * inner}{right}'
 
 
-def boxline(text, width, pad=2):
-    return f'│{" " * pad}{text}'
+
 
 
 def shorten_ref(ref):
@@ -143,14 +119,19 @@ def print_overview(dm, width):
     sensing_to = get_attr(dm, WM_PREFIX, 'SensingTimeout') or '?'
     wan_mode = get_attr(dm, WM_PREFIX, 'WANMode') or '?'
 
-    print(hline('═', width, '╔', '╗'))
+    lines = [
+        (f'OperationMode: {op_mode}   SensingPolicy: {sensing_pol}   '
+         f'SensingTimeout: {sensing_to}s'),
+        f'Active WANMode: {wan_mode}',
+    ]
+    box_w = box_width(width, lines, title='WAN MANAGER OVERVIEW')
+    print(hline('═', box_w, '╔', '╗'))
     title = 'WAN MANAGER OVERVIEW'
-    print(f'║{title:^{width - 2}}║')
-    print(hline('═', width, '╠', '╣'))
-    print(boxline(f'OperationMode: {op_mode}   SensingPolicy: {sensing_pol}   '
-                  f'SensingTimeout: {sensing_to}s', width))
-    print(boxline(f'Active WANMode: {wan_mode}', width))
-    print(hline('═', width, '╚', '╝'))
+    print(f'║{title:^{box_w - 2}}║')
+    print(hline('═', box_w, '╠', '╣'))
+    for line in lines:
+        print(boxline(line, box_w))
+    print(hline('═', box_w, '╚', '╝'))
     print()
 
 
@@ -159,18 +140,15 @@ def print_wan_compact(dm, wan_id, mode, intfs, width, is_active):
     st = '🟢' if mode['status'] != 'Disabled' else '🔴'
     sense = '📡' if mode['sensing'] == '1' else '  '
     active = ' ★ ACTIVE' if is_active else ''
-
-    print(hline('─', width, '┌', '┐'))
-    print(boxline(f'{st} WAN.{wan_id}: {mode["alias"]}{active}', width))
-    print(boxline(f'Physical: {mode["phys_type"]}  '
-                  f'Ref: {shorten_ref(mode["phys_ref"])}  '
-                  f'{sense} Sensing', width))
-    print(boxline(f'DNS: {mode["dns_mode"]}  IPv6DNS: {mode["ipv6_dns"]}  '
-                  f'Status: {mode["status"]}', width))
-    print(hline('─', width, '├', '┤'))
-
+    top_lines = [
+        f'{st} WAN.{wan_id}: {mode["alias"]}{active}',
+        (f'Physical: {mode["phys_type"]}  Ref: {shorten_ref(mode["phys_ref"])}  '
+         f'{sense} Sensing'),
+        f'DNS: {mode["dns_mode"]}  IPv6DNS: {mode["ipv6_dns"]}  Status: {mode["status"]}',
+    ]
+    body_lines = []
     if not intfs:
-        print(boxline('(no interfaces)', width))
+        body_lines.append('(no interfaces)')
     else:
         for iid in sorted(intfs.keys()):
             intf = intfs[iid]
@@ -179,7 +157,7 @@ def print_wan_compact(dm, wan_id, mode, intfs, width, is_active):
                     f'{intf["type"]}')
             if intf['type'] == 'vlan':
                 line += f' vlan:{intf["vlan_id"]}'
-            print(boxline(line, width))
+            body_lines.append(line)
             refs = []
             if intf['ipv4_ref']:
                 refs.append(f'IPv4→{ref_label(dm, intf["ipv4_ref"])}')
@@ -190,9 +168,16 @@ def print_wan_compact(dm, wan_id, mode, intfs, width, is_active):
             if intf['default_route']:
                 refs.append(f'Route→{ref_label(dm, intf["default_route"])}')
             if refs:
-                print(boxline(f'  {" | ".join(refs)}', width))
+                body_lines.append(f'  {" | ".join(refs)}')
 
-    print(hline('─', width, '└', '┘'))
+    box_w = box_width(width, top_lines + body_lines)
+    print(hline('─', box_w, '┌', '┐'))
+    for line in top_lines:
+        print(boxline(line, box_w))
+    print(hline('─', box_w, '├', '┤'))
+    for line in body_lines:
+        print(boxline(line, box_w))
+    print(hline('─', box_w, '└', '┘'))
     print()
 
 
@@ -201,17 +186,15 @@ def print_wan_wide(dm, wan_id, mode, intfs, width, is_active):
     st = '🟢' if mode['status'] != 'Disabled' else '🔴'
     sense = '📡' if mode['sensing'] == '1' else '  '
     active = ' ★ ACTIVE' if is_active else ''
-
-    print(hline('─', width, '┌', '┐'))
-    print(boxline(f'{st} WAN.{wan_id}: {mode["alias"]}{active}', width))
-    print(boxline(f'Physical: {mode["phys_type"]}  '
-                  f'Ref: {shorten_ref(mode["phys_ref"])}  '
-                  f'{sense} Sensing  Status: {mode["status"]}  '
-                  f'DNS: {mode["dns_mode"]}  IPv6DNS: {mode["ipv6_dns"]}', width))
-    print(hline('─', width, '├', '┤'))
-
+    top_lines = [
+        f'{st} WAN.{wan_id}: {mode["alias"]}{active}',
+        (f'Physical: {mode["phys_type"]}  Ref: {shorten_ref(mode["phys_ref"])}  '
+         f'{sense} Sensing  Status: {mode["status"]}  DNS: {mode["dns_mode"]}  '
+         f'IPv6DNS: {mode["ipv6_dns"]}'),
+    ]
+    body_lines = []
     if not intfs:
-        print(boxline('(no interfaces)', width))
+        body_lines.append('(no interfaces)')
     else:
         c_id = 6
         c_alias = 10
@@ -228,8 +211,7 @@ def print_wan_wide(dm, wan_id, mode, intfs, width, is_active):
         sep = (f'{"─"*c_id} {"─"*c_alias} {"─"*c_v4mode} '
                f'{"─"*c_v6mode} {"─"*c_type} {"─"*c_vlan} '
                f'{"─"*c_v4ref} {"─"*c_route}')
-        print(boxline(hdr, width))
-        print(boxline(sep, width))
+        body_lines.extend([hdr, sep])
 
         for iid in sorted(intfs.keys()):
             intf = intfs[iid]
@@ -240,9 +222,16 @@ def print_wan_wide(dm, wan_id, mode, intfs, width, is_active):
                     f'{intf["type"]:<{c_type}} {vlan:<{c_vlan}} '
                     f'{ref_label(dm, intf["ipv4_ref"]):<{c_v4ref}} '
                     f'{ref_label(dm, intf["default_route"]):<{c_route}}')
-            print(boxline(line, width))
+            body_lines.append(line)
 
-    print(hline('─', width, '└', '┘'))
+    box_w = box_width(width, top_lines + body_lines)
+    print(hline('─', box_w, '┌', '┐'))
+    for line in top_lines:
+        print(boxline(line, box_w))
+    print(hline('─', box_w, '├', '┤'))
+    for line in body_lines:
+        print(boxline(line, box_w))
+    print(hline('─', box_w, '└', '┘'))
     print()
 
 
@@ -255,7 +244,7 @@ def print_wan_mode(dm, wan_id, mode, intfs, width, is_active):
 
 def main():
     filepath = sys.argv[1] if len(sys.argv) > 1 else 'DM.txt'
-    width = get_term_width()
+    width = warn_narrow_width()
 
     print(f'Parsing: {filepath}')
     print()
@@ -276,21 +265,16 @@ def main():
         print_wan_mode(dm, wid, modes[wid], intfs, width, is_active)
 
     # Summary table
-    print(hline('═', width))
-    print('  WAN MODE SUMMARY')
-    print(hline('═', width))
+    summary_lines = ['  WAN MODE SUMMARY']
     if width >= 90:
         c = (4, 20, 10, 10, 10, 5, 6)
-        print(f'  {"ID":<{c[0]}} {"Alias":<{c[1]}} {"PhysType":<{c[2]}} '
-              f'{"Status":<{c[3]}} {"DNS":<{c[4]}} {"Sens":<{c[5]}} {"Intfs":<{c[6]}}')
-        print(f'  {"─"*c[0]} {"─"*c[1]} {"─"*c[2]} '
-              f'{"─"*c[3]} {"─"*c[4]} {"─"*c[5]} {"─"*c[6]}')
+        headers = ('ID', 'Alias', 'PhysType', 'Status', 'DNS', 'Sens', 'Intfs')
     else:
         c = (3, 16, 9, 9, 4, 4)
-        print(f'  {"ID":<{c[0]}} {"Alias":<{c[1]}} {"Phys":<{c[2]}} '
-              f'{"Status":<{c[3]}} {"Sn":<{c[4]}} {"If":<{c[5]}}')
-        print(f'  {"─"*c[0]} {"─"*c[1]} {"─"*c[2]} '
-              f'{"─"*c[3]} {"─"*c[4]} {"─"*c[5]}')
+        headers = ('ID', 'Alias', 'Phys', 'Status', 'Sn', 'If')
+    header = '  ' + ' '.join(fit_display(label, width) for label, width in zip(headers, c))
+    separator = '  ' + ' '.join('─' * width for width in c)
+    summary_lines.extend([header, separator])
 
     for wid in sorted(modes.keys()):
         m = modes[wid]
@@ -299,12 +283,33 @@ def main():
         sense = '📡' if m['sensing'] == '1' else '  '
         active = '★' if m['alias'] == active_mode else ' '
         if width >= 90:
-            print(f' {active}{wid:<{c[0]}} {m["alias"]:<{c[1]}} {m["phys_type"]:<{c[2]}} '
-                  f'{st + " " + m["status"]:<{c[3]}} {m["dns_mode"]:<{c[4]}} '
-                  f'{sense:<{c[5]}} {len(intfs):<{c[6]}}')
+            values = (
+                f'{active}{wid}',
+                m['alias'],
+                m['phys_type'],
+                f'{st} {m["status"]}',
+                m['dns_mode'],
+                sense,
+                str(len(intfs)),
+            )
         else:
-            print(f' {active}{wid:<{c[0]}} {m["alias"]:<{c[1]}} {m["phys_type"]:<{c[2]}} '
-                  f'{st:<{c[3]}} {sense:<{c[4]}} {len(intfs):<{c[5]}}')
+            values = (
+                f'{active}{wid}',
+                m['alias'],
+                m['phys_type'],
+                st,
+                sense,
+                str(len(intfs)),
+            )
+        summary_lines.append(
+            ' ' + ' '.join(fit_display(value, width) for value, width in zip(values, c))
+        )
+    summary_width = max(width, max(display_width(line) for line in summary_lines))
+    print(hline('═', summary_width))
+    print(summary_lines[0])
+    print(hline('═', summary_width))
+    for line in summary_lines[1:]:
+        print(line)
     print()
 
 

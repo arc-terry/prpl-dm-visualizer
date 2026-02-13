@@ -10,28 +10,7 @@ import re
 import sys
 from collections import defaultdict
 
-
-def parse_dm(filepath):
-    """Parse DM.txt into a dict of {path: value}."""
-    dm = {}
-    with open(filepath) as f:
-        for line in f:
-            line = line.strip()
-            m = re.match(r'^(Device\..+?)=(.*)$', line)
-            if m:
-                key = m.group(1)
-                val = m.group(2).strip('"')
-                dm[key] = val
-    return dm
-
-
-def get_obj_attr(dm, obj_path, attr):
-    """Get attribute value for an object path, trying with/without trailing dot."""
-    obj = obj_path.rstrip('.')
-    for key in [f"{obj}.{attr}", f"{obj}..{attr}"]:
-        if key in dm:
-            return dm[key]
-    return None
+from utils import get_attr as get_obj_attr, parse_dm, warn_narrow_width
 
 
 def resolve_name(dm, obj_path):
@@ -84,6 +63,7 @@ def walk_stack(dm, obj_path, depth=0):
 
 def main():
     filepath = sys.argv[1] if len(sys.argv) > 1 else 'DM.txt'
+    warn_narrow_width()
 
     print(f'Parsing: {filepath}')
     print()
@@ -98,40 +78,35 @@ def main():
             logical_ids.append(int(m.group(1)))
     logical_ids.sort()
 
-    total = get_obj_attr(dm, 'Device.Logical', 'InterfaceNumberOfEntries')
-    print(f'Device.Logical.InterfaceNumberOfEntries = {total}')
-    print('=' * 80)
-
+    interfaces = []
     for lid in logical_ids:
         obj = f'Device.Logical.Interface.{lid}'
         wan_status = get_obj_attr(dm, obj, 'X_PRPLWARE-COM_WAN.Status') or ''
         lan_status = get_obj_attr(dm, obj, 'X_PRPLWARE-COM_LAN.Status') or ''
         role = 'WAN' if wan_status == 'Enabled' else 'LAN' if lan_status == 'Enabled' else '?'
-
         name = resolve_name(dm, obj)
-        print()
-        print(f'╔{"═" * 78}╗')
-        print(f'║  Logical.Interface.{lid} "{name}"  (Role: {role})'
-              f'{" " * (78 - 30 - len(name) - len(role) - len(str(lid)))}║')
-        print(f'╚{"═" * 78}╝')
-        print()
-        walk_stack(dm, obj)
-        print()
+        label = f'  Logical.Interface.{lid} "{name}"  (Role: {role})'
+        interfaces.append({
+            'id': lid,
+            'obj': obj,
+            'role': role,
+            'label': label,
+        })
 
-    # Summary table
-    print()
-    print('=' * 80)
-    print(f'{"#":<4} {"Alias":<16} {"Role":<6} {"Status":<8} '
-          f'{"IP Interface":<22} {"Eth Link":<22} {"Bottom Layer"}')
-    print('-' * 80)
+    box_inner_width = 78
+    if interfaces:
+        box_inner_width = max(box_inner_width, max(len(entry['label']) for entry in interfaces))
+    box_width = box_inner_width + 2
 
-    for lid in logical_ids:
-        obj = f'Device.Logical.Interface.{lid}'
+    header = (f'{"#":<4} {"Alias":<16} {"Role":<6} {"Status":<8} '
+              f'{"IP Interface":<22} {"Eth Link":<22} {"Bottom Layer"}')
+    summary_rows = []
+    for entry in interfaces:
+        lid = entry['id']
+        obj = entry['obj']
         alias = get_obj_attr(dm, obj, 'Alias') or ''
         status = get_obj_attr(dm, obj, 'Status') or ''
-        wan_st = get_obj_attr(dm, obj, 'X_PRPLWARE-COM_WAN.Status') or ''
-        lan_st = get_obj_attr(dm, obj, 'X_PRPLWARE-COM_LAN.Status') or ''
-        role = 'WAN' if wan_st == 'Enabled' else 'LAN' if lan_st == 'Enabled' else '?'
+        role = entry['role']
 
         # Walk to find IP and Ethernet layers
         ip_iface = ''
@@ -152,8 +127,42 @@ def main():
                     if bottom_name:
                         bottom += f' ({bottom_name})'
 
-        print(f'{lid:<4} {alias:<16} {role:<6} {status:<8} '
-              f'{ip_iface:<22} {eth_link:<22} {bottom}')
+        summary_rows.append(
+            f'{lid:<4} {alias:<16} {role:<6} {status:<8} '
+            f'{ip_iface:<22} {eth_link:<22} {bottom}'
+        )
+
+    table_width = len(header)
+    if summary_rows:
+        table_width = max(table_width, max(len(row) for row in summary_rows))
+    table_width = max(table_width, box_width)
+
+    total = get_obj_attr(dm, 'Device.Logical', 'InterfaceNumberOfEntries')
+    print(f'Device.Logical.InterfaceNumberOfEntries = {total}')
+    print('=' * box_width)
+
+    for entry in interfaces:
+        lid = entry['id']
+        obj = entry['obj']
+        role = entry['role']
+        label = entry['label']
+
+        print()
+        print(f'╔{"═" * box_inner_width}╗')
+        print(f'║{label}{" " * (box_inner_width - len(label))}║')
+        print(f'╚{"═" * box_inner_width}╝')
+        print()
+        walk_stack(dm, obj)
+        print()
+
+    # Summary table
+    print()
+    print('=' * table_width)
+    print(header.ljust(table_width))
+    print('-' * table_width)
+
+    for row in summary_rows:
+        print(row.ljust(table_width))
 
     print()
 

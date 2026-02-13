@@ -13,9 +13,13 @@ References:
 
 import os
 import re
-import shutil
 import sys
 from collections import defaultdict
+
+from utils import (
+    get_term_width, parse_dm, get_attr, warn_narrow_width,
+    display_width, pad_display, hline, boxline, box_width,
+)
 
 PROTO_MAP = {
     '6': 'TCP',
@@ -26,34 +30,7 @@ PROTO_MAP = {
 }
 
 
-def get_term_width():
-    """Return terminal width, defaulting to 80."""
-    try:
-        return shutil.get_terminal_size((80, 24)).columns
-    except Exception:
-        return 80
 
-
-def parse_dm(filepath):
-    """Parse DM.txt into a dict of {path: value}."""
-    dm = {}
-    with open(filepath) as f:
-        for line in f:
-            line = line.strip()
-            m = re.match(r'^(Device\..+?)=(.*)$', line)
-            if m:
-                key = m.group(1)
-                val = m.group(2).strip('"')
-                dm[key] = val
-    return dm
-
-
-def get_attr(dm, prefix, attr):
-    """Get attribute from DM dict, trying with/without double dot."""
-    for key in [f"{prefix}.{attr}", f"{prefix}..{attr}"]:
-        if key in dm:
-            return dm[key]
-    return None
 
 
 def discover_chains(dm):
@@ -139,16 +116,7 @@ def format_target(target):
     return f'➡️  {target}'
 
 
-def hline(char, width, left='', right=''):
-    """Draw a horizontal line fitting the terminal width."""
-    inner = width - len(left) - len(right)
-    return f'{left}{char * inner}{right}'
 
-
-def boxline(text, width, pad=2):
-    """Render a left-aligned text line inside a box of given width."""
-    inner = width - 2  # subtract │ on each side
-    return f'│{" " * pad}{text}'
 
 
 def print_firewall_overview(dm, width):
@@ -159,28 +127,29 @@ def print_firewall_overview(dm, width):
     policy = get_attr(dm, 'Device.Firewall', 'PolicyLevel') or '?'
     chain_count = get_attr(dm, 'Device.Firewall', 'ChainNumberOfEntries') or '?'
 
-    print(hline('═', width, '╔', '╗'))
+    lines = [
+        f'Enable: {enable}  Type: {fw_type}  Config: {config}',
+        f'Policy: {policy}',
+        f'Chains: {chain_count}',
+    ]
+    box_w = box_width(width, lines, title='TR-181 FIREWALL OVERVIEW')
+    print(hline('═', box_w, '╔', '╗'))
     title = 'TR-181 FIREWALL OVERVIEW'
-    print(f'║{title:^{width - 2}}║')
-    print(hline('═', width, '╠', '╣'))
-    print(boxline(f'Enable: {enable}  Type: {fw_type}  Config: {config}', width))
-    print(boxline(f'Policy: {policy}', width))
-    print(boxline(f'Chains: {chain_count}', width))
-    print(hline('═', width, '╚', '╝'))
+    print(f'║{title:^{box_w - 2}}║')
+    print(hline('═', box_w, '╠', '╣'))
+    for line in lines:
+        print(boxline(line, box_w))
+    print(hline('═', box_w, '╚', '╝'))
     print()
 
 
 def print_chain_compact(chain_id, chain_info, rules, width):
     """Print chain and rules in compact card layout for narrow terminals."""
     enable = '🟢' if chain_info['enable'] == '1' else '🔴'
-
-    print(hline('─', width, '┌', '┐'))
-    print(boxline(f'{enable} Chain {chain_id}: {chain_info["name"]} ({chain_info["alias"]})', width))
-    print(boxline(f'Rules: {chain_info["rule_count"]}', width))
-    print(hline('─', width, '├', '┤'))
-
+    header = f'{enable} Chain {chain_id}: {chain_info["name"]} ({chain_info["alias"]})'
+    lines = [header, f'Rules: {chain_info["rule_count"]}']
     if not rules:
-        print(boxline('(no rules)', width))
+        lines.append('(no rules)')
     else:
         sorted_rules = sorted(rules.values(), key=lambda r: r['order'])
         for r in sorted_rules:
@@ -199,9 +168,16 @@ def print_chain_compact(chain_id, chain_info, rules, width):
                 parts.append(f'state:{r["conn_state"]}')
             if parts:
                 line1 += '  ' + ' '.join(parts)
-            print(boxline(line1, width))
+            lines.append(line1)
 
-    print(hline('─', width, '└', '┘'))
+    box_w = box_width(width, lines)
+    print(hline('─', box_w, '┌', '┐'))
+    print(boxline(lines[0], box_w))
+    print(boxline(lines[1], box_w))
+    print(hline('─', box_w, '├', '┤'))
+    for line in lines[2:]:
+        print(boxline(line, box_w))
+    print(hline('─', box_w, '└', '┘'))
     print()
 
 
@@ -226,35 +202,78 @@ def print_chain_wide(chain_id, chain_info, rules, width):
     c_sip = max(4, min(16, remaining // 4))
     c_dip = max(4, remaining - c_alias - c_target - c_sip)
 
-    print(hline('─', width, '┌', '┐'))
-    print(boxline(f'{enable} Chain {chain_id}: {chain_info["name"]} ({chain_info["alias"]})', width))
-    print(boxline(f'Rules: {chain_info["rule_count"]}', width))
-    print(hline('─', width, '├', '┤'))
-
+    header = f'{enable} Chain {chain_id}: {chain_info["name"]} ({chain_info["alias"]})'
+    lines = [header, f'Rules: {chain_info["rule_count"]}']
     if not rules:
-        print(boxline('(no rules)', width))
+        lines.append('(no rules)')
     else:
-        hdr = (f'{"#":<{c_order}} {"Alias":<{c_alias}} {"Target":<{c_target}} '
-               f'{"Proto":<{c_proto}} {"DPort":<{c_dport}} {"SPort":<{c_sport}} '
-               f'{"SrcIP":<{c_sip}} {"DstIP":<{c_dip}}')
-        sep = (f'{"─"*c_order} {"─"*c_alias} {"─"*c_target} '
-               f'{"─"*c_proto} {"─"*c_dport} {"─"*c_sport} '
-               f'{"─"*c_sip} {"─"*c_dip}')
-        print(boxline(hdr, width))
-        print(boxline(sep, width))
-
         sorted_rules = sorted(rules.values(), key=lambda r: r['order'])
+        rows = []
         for r in sorted_rules:
             target_str = format_target(r['target'])
-            extra = ''
-            if r['conn_state']:
-                extra = f' state:{r["conn_state"]}'
-            line = (f'{r["order"]:<{c_order}} {r["alias"]:<{c_alias}} {target_str:<{c_target}} '
-                    f'{r["protocol"]:<{c_proto}} {r["dest_port"]:<{c_dport}} {r["src_port"]:<{c_sport}} '
-                    f'{r["src_ip"]:<{c_sip}} {r["dest_ip"]:<{c_dip}}{extra}')
-            print(boxline(line, width))
+            extra = f'state:{r["conn_state"]}' if r['conn_state'] else ''
+            rows.append({
+                'order': str(r['order']),
+                'alias': r['alias'],
+                'target': target_str,
+                'proto': r['protocol'],
+                'dport': r['dest_port'],
+                'sport': r['src_port'],
+                'src_ip': r['src_ip'],
+                'dst_ip': r['dest_ip'],
+                'extra': extra,
+            })
 
-    print(hline('─', width, '└', '┘'))
+        has_extra = any(row['extra'] for row in rows)
+        columns = [
+            ('order', '#'),
+            ('alias', 'Alias'),
+            ('target', 'Target'),
+            ('proto', 'Proto'),
+            ('dport', 'DPort'),
+            ('sport', 'SPort'),
+            ('src_ip', 'SrcIP'),
+            ('dst_ip', 'DstIP'),
+        ]
+        if has_extra:
+            columns.append(('extra', 'Extra'))
+
+        min_widths = {
+            'order': 4,
+            'alias': 8,
+            'target': 8,
+            'proto': 7,
+            'dport': 7,
+            'sport': 7,
+            'src_ip': 8,
+            'dst_ip': 8,
+            'extra': 12,
+        }
+        widths = {}
+        for key, label in columns:
+            widths[key] = max(min_widths.get(key, 0), display_width(label),
+                              max(display_width(row[key]) for row in rows))
+
+        header_row = {key: label for key, label in columns}
+        hdr = ' '.join(pad_display(header_row[key], widths[key]) for key, _ in columns)
+        sep = ' '.join('─' * widths[key] for key, _ in columns)
+        lines.extend([hdr, sep])
+
+        for row in rows:
+            line = ' '.join(pad_display(row[key], widths[key]) for key, _ in columns)
+            lines.append(line)
+
+    box_w = box_width(width, lines)
+    print(hline('─', box_w, '┌', '┐'))
+    print(boxline(lines[0], box_w))
+    print(boxline(lines[1], box_w))
+    print(hline('─', box_w, '├', '┤'))
+    for idx, line in enumerate(lines[2:], start=2):
+        if idx == 3:
+            print(boxline(line, box_w, fill='─'))
+        else:
+            print(boxline(line, box_w))
+    print(hline('─', box_w, '└', '┘'))
     print()
 
 
@@ -268,7 +287,7 @@ def print_chain(chain_id, chain_info, rules, width):
 
 def main():
     filepath = sys.argv[1] if len(sys.argv) > 1 else 'DM.txt'
-    width = get_term_width()
+    width = warn_narrow_width()
 
     print(f'Parsing: {filepath}')
     print()
@@ -286,20 +305,28 @@ def main():
         print_chain(cid, chains[cid], rules, width)
 
     # Summary table
-    print(hline('═', width))
-    print('  CHAIN SUMMARY')
-    print(hline('═', width))
+    summary_lines = ['  CHAIN SUMMARY']
     # Adapt summary columns to width
     if width >= 70:
         c_id, c_name, c_alias, c_en, c_rules = 4, 26, 16, 4, 6
     else:
         c_id, c_name, c_alias, c_en, c_rules = 3, 18, 12, 3, 5
-    print(f'  {"ID":<{c_id}} {"Name":<{c_name}} {"Alias":<{c_alias}} {"En":<{c_en}} {"Rules":<{c_rules}}')
-    print(f'  {"─"*c_id} {"─"*c_name} {"─"*c_alias} {"─"*c_en} {"─"*c_rules}')
+    header = f'  {"ID":<{c_id}} {"Name":<{c_name}} {"Alias":<{c_alias}} {"En":<{c_en}} {"Rules":<{c_rules}}'
+    separator = f'  {"─"*c_id} {"─"*c_name} {"─"*c_alias} {"─"*c_en} {"─"*c_rules}'
+    summary_lines.extend([header, separator])
     for cid in sorted(chains.keys()):
         c = chains[cid]
         en = '🟢' if c['enable'] == '1' else '🔴'
-        print(f'  {cid:<{c_id}} {c["name"]:<{c_name}} {c["alias"]:<{c_alias}} {en:<{c_en}} {c["rule_count"]:<{c_rules}}')
+        summary_lines.append(
+            f'  {cid:<{c_id}} {c["name"]:<{c_name}} {c["alias"]:<{c_alias}} '
+            f'{en:<{c_en}} {c["rule_count"]:<{c_rules}}'
+        )
+    summary_width = max(width, max(display_width(line) for line in summary_lines))
+    print(hline('═', summary_width))
+    print(summary_lines[0])
+    print(hline('═', summary_width))
+    for line in summary_lines[1:]:
+        print(line)
     print()
 
 

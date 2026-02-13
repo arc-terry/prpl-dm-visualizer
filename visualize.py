@@ -30,6 +30,8 @@ def discover_visualizers():
             continue
         if name.startswith('_'):
             continue
+        if not name.startswith('show_'):
+            continue
         path = os.path.join(VIS_DIR, name)
         if os.path.isfile(path):
             entries.append({
