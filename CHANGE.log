@@ -1,0 +1,8 @@
+# CHANGE.log
+
+## v0.1.0 - 2026-02-13
+- Added shared visualizer utilities for parsing, layout, and width handling.
+- Added terminal width warning when console width is below 80 columns.
+- Fixed box border alignment in firewall, WAN manager, and logical stack outputs.
+- Limited visualizer discovery to show_*.py scripts.
+- Synchronized README, developer guide, and Copilot instructions.

@@ -34,9 +34,10 @@ The DM file prompt supports tab completion on systems with Python readline, incl
 
 ## Adding a New Visualizer
 
-1. Add a new script under `dm_visualizers/` (for example: `dm_visualizers/show_qos.py`).
+1. Add a new script under `dm_visualizers/` named `show_<object>.py` (for example: `dm_visualizers/show_qos.py`).
 2. Keep a `Usage:` line in the module docstring for consistency.
-3. Run `python3 visualize.py` — the controller auto-detects new scripts.
+3. Reuse shared helpers from `dm_visualizers/utils.py` (parsing, layout, width warnings).
+4. Run `python3 visualize.py` — the controller auto-detects `show_*.py` scripts.
 
 ## Demo Data
 
@@ -69,6 +70,9 @@ All scripts auto-detect terminal width and switch between:
 
 - **Compact layout** (< 90 columns) — card-style with stacked details
 - **Wide layout** (≥ 90 columns) — tabular with aligned columns
+
+When the terminal is narrower than 80 columns, the scripts emit a warning with the
+current width and a recommended minimum.
 
 ## Documentation
 

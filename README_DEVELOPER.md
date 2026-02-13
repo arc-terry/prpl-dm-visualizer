@@ -20,10 +20,13 @@ This guide shows a simple, step-by-step Copilot CLI flow for adding a new visual
 ```
 
 3) Ask Copilot to generate a new visualizer and documentation.
+   Ensure the script name starts with `show_` (so `visualize.py` discovers it) and
+   reuse helpers from `dm_visualizers/utils.py`.
    Example (simple object: `Device.IP`):
 ```
 Please use the tr181-dm-visualizer skill to add a new visualizer for Device.IP.
 Create dm_visualizers/show_ip.py with a Usage line in the module docstring.
+Use helpers from dm_visualizers/utils.py (parse_dm, get_attr, boxline, box_width, warn_narrow_width).
 Parse Device.*=value lines only, normalize trailing dots, and include a summary table.
 Also add doc/tr181-ip.md using doc/tr181-fw.md as the layout template.
 ```
@@ -53,5 +56,5 @@ COLUMNS=120 python3 dm_visualizers/show_ip.py demo_dm_data/pon-wan-DM.txt | head
 
 If you want the shortest possible instruction, use this single prompt:
 ```
-Use the tr181-dm-visualizer skill to add dm_visualizers/show_ip.py and doc/tr181-ip.md for Device.IP, following existing conventions.
+Use the tr181-dm-visualizer skill to add dm_visualizers/show_ip.py and doc/tr181-ip.md for Device.IP, following existing conventions and shared utils.
 ```

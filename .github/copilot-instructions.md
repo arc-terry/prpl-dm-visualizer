@@ -1,16 +1,19 @@
 # Copilot instructions
 
 ## Build, test, lint
-- Run the CLI: `python3 dm_visualizers/show_logical_stack.py [DM.txt]`
+- Run the controller CLI: `python3 visualize.py [visualizer] [DM.txt]`.
+- Run a specific visualizer directly: `python3 dm_visualizers/show_firewall_rules.py [DM.txt]`.
 - No automated tests or lint configs are present in this repo.
 
 ## High-level architecture
-- `dm_visualizers/show_logical_stack.py` is a standalone CLI that parses a TR-181 style dump (`DM.txt`) of `Device.*=value` lines into a key/value dict.
-- Logical interfaces are discovered via `Device.Logical.Interface.<id>.Name` keys, then their stacks are printed by recursively following `LowerLayers` references.
-- Output includes a per-interface tree plus a summary table; interface role is derived from `X_PRPLWARE-COM_WAN.Status` / `X_PRPLWARE-COM_LAN.Status`.
+- `visualize.py` discovers and runs `dm_visualizers/show_*.py` scripts.
+- Visualizers share helpers in `dm_visualizers/utils.py` for parsing, box drawing, and width-aware padding.
+- Logical stack output follows `LowerLayers` references and derives roles from `X_PRPLWARE-COM_WAN.Status` / `X_PRPLWARE-COM_LAN.Status`.
 
 ## Key conventions
 - Only lines matching `Device.*=...` are parsed; object header lines like `Device.Bridging.` are ignored.
 - Object paths may appear with or without a trailing dot; helpers normalize with `rstrip('.')` and try both `obj.attr` and `obj..attr`.
 - `LowerLayers` values are comma-separated references; trim whitespace and trailing dots before use.
 - Display names prefer `Name`, fall back to `Alias`; role is `WAN`/`LAN` when the vendor status is `Enabled`.
+- Visualizer scripts must be named `show_*.py` to be discovered by `visualize.py`.
+- Visualizers call `warn_narrow_width()` and emit a warning when width < 80 columns.
