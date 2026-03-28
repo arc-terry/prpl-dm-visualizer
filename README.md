@@ -14,7 +14,10 @@ Scripts live under `dm_visualizers/`:
 |---|---|---|
 | `dm_visualizers/show_logical_stack.py` | `Device.Logical` | Interface stack tree via recursive `LowerLayers` walk, WAN/LAN role detection |
 | `dm_visualizers/show_firewall_rules.py` | `Device.Firewall` | Chain/rule tables, Level→Policy→Chain resolution, target/protocol display |
+| `dm_visualizers/show_bridging.py` | `Device.Bridging` | Bridge-to-port topology with STP and LowerLayers references |
+| `dm_visualizers/show_dhcpv4.py` | `Device.DHCPv4` | DHCP clients and server pools with interface and lease state |
 | `dm_visualizers/show_ip.py` | `Device.IP` | IP overview, per-interface LowerLayers, IPv4/IPv6 address tables |
+| `dm_visualizers/show_qos.py` | `Device.QoS` | Classification, queue, and shaper mapping with traffic-class summaries |
 | `dm_visualizers/show_wifi.py` | `Device.WiFi` | Radio to SSID to access-point topology with linked summary tables |
 | `dm_visualizers/show_wan_manager.py` | `Device.X_PRPLWARE-COM_WANManager` | WAN modes, per-mode interfaces, IPv4/IPv6 mode, alias-resolved references |
 
@@ -24,9 +27,12 @@ Scripts live under `dm_visualizers/`:
 python3 visualize.py
 python3 visualize.py show_firewall_rules demo_dm_data/pon-wan-DM.txt
 
+python3 dm_visualizers/show_bridging.py [DM.txt]
+python3 dm_visualizers/show_dhcpv4.py [DM.txt]
 python3 dm_visualizers/show_logical_stack.py [DM.txt]
 python3 dm_visualizers/show_firewall_rules.py [DM.txt]
 python3 dm_visualizers/show_ip.py [DM.txt]
+python3 dm_visualizers/show_qos.py [DM.txt]
 python3 dm_visualizers/show_wifi.py [DM.txt]
 python3 dm_visualizers/show_wan_manager.py [DM.txt]
 ```
@@ -80,9 +86,12 @@ current width and a recommended minimum.
 
 ## Documentation
 
+- [`doc/tr181-bridging.md`](doc/tr181-bridging.md) — TR-181 bridge instances, ports, STP state, and LowerLayers attachment
+- [`doc/tr181-dhcpv4.md`](doc/tr181-dhcpv4.md) — TR-181 DHCP clients and server pools with interface bindings
 - [`doc/tr181-logical.md`](doc/tr181-logical.md) — TR-181 Logical interface stack overview
 - [`doc/tr181-fw.md`](doc/tr181-fw.md) — TR-181 Firewall object hierarchy and chain selection mechanism
 - [`doc/tr181-ip.md`](doc/tr181-ip.md) — TR-181 IP interfaces, address objects, and LowerLayers mapping
+- [`doc/tr181-qos.md`](doc/tr181-qos.md) — TR-181 classifications, queues, shapers, and traffic-class mapping
 - [`doc/tr181-wifi.md`](doc/tr181-wifi.md) — TR-181 WiFi radios, SSIDs, access points, and their relationships
 - [`doc/tr181-wan-manager.md`](doc/tr181-wan-manager.md) — TR-181 WAN Manager modes and interfaces
 
