@@ -14,6 +14,7 @@ Scripts live under `dm_visualizers/`:
 |---|---|---|
 | `dm_visualizers/show_logical_stack.py` | `Device.Logical` | Interface stack tree via recursive `LowerLayers` walk, WAN/LAN role detection |
 | `dm_visualizers/show_firewall_rules.py` | `Device.Firewall` | Chain/rule tables, Level→Policy→Chain resolution, target/protocol display |
+| `dm_visualizers/show_ip.py` | `Device.IP` | IP overview, per-interface LowerLayers, IPv4/IPv6 address tables |
 | `dm_visualizers/show_wan_manager.py` | `Device.X_PRPLWARE-COM_WANManager` | WAN modes, per-mode interfaces, IPv4/IPv6 mode, alias-resolved references |
 
 ## Usage
@@ -24,6 +25,7 @@ python3 visualize.py show_firewall_rules demo_dm_data/pon-wan-DM.txt
 
 python3 dm_visualizers/show_logical_stack.py [DM.txt]
 python3 dm_visualizers/show_firewall_rules.py [DM.txt]
+python3 dm_visualizers/show_ip.py [DM.txt]
 python3 dm_visualizers/show_wan_manager.py [DM.txt]
 ```
 
@@ -78,6 +80,7 @@ current width and a recommended minimum.
 
 - [`doc/tr181-logical.md`](doc/tr181-logical.md) — TR-181 Logical interface stack overview
 - [`doc/tr181-fw.md`](doc/tr181-fw.md) — TR-181 Firewall object hierarchy and chain selection mechanism
+- [`doc/tr181-ip.md`](doc/tr181-ip.md) — TR-181 IP interfaces, address objects, and LowerLayers mapping
 - [`doc/tr181-wan-manager.md`](doc/tr181-wan-manager.md) — TR-181 WAN Manager modes and interfaces
 
 ## References
