@@ -6,10 +6,17 @@ This guide shows a simple, step-by-step Copilot CLI flow for adding a new visual
 
 - Python 3 installed
 - Run commands from the repo root
+- Bundled skills installed from `.github/skills` into `~/.codex/skills`
+
+Install bundled skills once:
+
+```bash
+cp -R .github/skills/* ~/.codex/skills/
+```
 
 ## Step-by-step (Copilot CLI)
 
-1) List available skills to confirm the visualizer helper exists:
+1) List available skills to confirm helpers are available:
 ```
 /skills list
 ```

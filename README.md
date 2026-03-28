@@ -42,6 +42,27 @@ You can enter a number or a unique name prefix (auto-completed when unambiguous)
 If no file is provided, it prompts for a DM file (defaulting to `DM.txt` when present).
 The DM file prompt supports tab completion on systems with Python readline, including subdirectories like `demo_dm_data/`.
 
+## Bundled Skills
+
+This repository includes reusable Codex/Copilot skills under `.github/skills/`:
+
+- `tr181-dm-visualizer`
+- `git-commit`
+- `git-push`
+- `git-semver-tag`
+
+Install them into your local Codex skills directory:
+
+```bash
+cp -R .github/skills/* ~/.codex/skills/
+```
+
+After install, verify:
+
+```bash
+/skills list
+```
+
 ## Adding a New Visualizer
 
 1. Add a new script under `dm_visualizers/` named `show_<object>.py` (for example: `dm_visualizers/show_qos.py`).

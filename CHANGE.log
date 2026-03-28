@@ -1,8 +1,18 @@
 # CHANGE.log
 
 ## v0.1.0-next - 2026-03-28
+- Documented installing bundled Codex/Copilot skills from `.github/skills` into `~/.codex/skills`.
 - Added a `Device.IP` visualizer with per-interface IPv4/IPv6 address views and a summary table.
 - Added TR-181 `Device.IP` documentation and updated the README to list the new visualizer.
+- Added a `Device.WiFi` visualizer with radio-to-SSID-to-access-point topology views and summary tables.
+- Added TR-181 `Device.WiFi` documentation and updated the README to list the new visualizer.
+- Clarified the developer guide's minimal visualizer prompt by marking variable parts and showing example values.
+- Added a `Device.Bridging` visualizer with bridge, port, STP, and `LowerLayers` topology views.
+- Added TR-181 `Device.Bridging` documentation and updated the README to list the new visualizer.
+- Added a `Device.QoS` visualizer with classification, queue, shaper, and traffic-class mapping views.
+- Added TR-181 `Device.QoS` documentation and updated the README to list the new visualizer.
+- Added a `Device.DHCPv4` visualizer with client and server-pool operational views and summaries.
+- Added TR-181 `Device.DHCPv4` documentation and updated the README to list the new visualizer.
 
 ## v0.1.0 - 2026-02-13
 - Added shared visualizer utilities for parsing, layout, and width handling.
