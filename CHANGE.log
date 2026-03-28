@@ -1,5 +1,9 @@
 # CHANGE.log
 
+## v0.1.0-next - 2026-03-28
+- Added a `Device.IP` visualizer with per-interface IPv4/IPv6 address views and a summary table.
+- Added TR-181 `Device.IP` documentation and updated the README to list the new visualizer.
+
 ## v0.1.0 - 2026-02-13
 - Added shared visualizer utilities for parsing, layout, and width handling.
 - Added terminal width warning when console width is below 80 columns.

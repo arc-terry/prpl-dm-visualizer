@@ -56,5 +56,18 @@ COLUMNS=120 python3 dm_visualizers/show_ip.py demo_dm_data/pon-wan-DM.txt | head
 
 If you want the shortest possible instruction, use this single prompt:
 ```
+Use the tr181-dm-visualizer skill to add dm_visualizers/show_<object>.py and doc/tr181-<object>.md for Device.<Object>, following existing conventions and shared utils.
+```
+
+Variable parts in the prompt:
+
+- `<object>`: lowercase file/object suffix, example `ip`
+- `<Object>`: TR-181 object name, example `IP`
+- `dm_visualizers/show_<object>.py`: example `dm_visualizers/show_ip.py`
+- `doc/tr181-<object>.md`: example `doc/tr181-ip.md`
+- `Device.<Object>`: example `Device.IP`
+
+Full example with values filled in:
+```
 Use the tr181-dm-visualizer skill to add dm_visualizers/show_ip.py and doc/tr181-ip.md for Device.IP, following existing conventions and shared utils.
 ```
